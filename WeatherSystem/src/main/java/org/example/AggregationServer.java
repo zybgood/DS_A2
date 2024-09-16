@@ -44,9 +44,9 @@ public class AggregationServer {
                 output = new PrintWriter(socket.getOutputStream(), true);
                 String request = input.readLine();
                 if (request.startsWith("GET")) {
-                    handleGet();
+                    handleGet(output);
                 } else if (request.startsWith("PUT")) {
-                    handlePut();
+                    handlePut(input, output);
                 } else {
                     output.println("HTTP/1.1 400 Bad Request");
                 }
@@ -61,28 +61,45 @@ public class AggregationServer {
             }
         }
 
-        private void handleGet() throws IOException {
+        private void handleGet(PrintWriter output) throws IOException {
             output.println("HTTP/1.1 200 OK");
             output.println("Content-Type: application/json");
             output.println();
-            output.println(gson.toJson(weatherDataMap));
+            // Ensure the weather data map is not empty before returning it
+            if (!weatherDataMap.isEmpty()) {
+                output.println(gson.toJson(weatherDataMap));
+            } else {
+                // Return an empty object if no weather data is available
+                output.println("{}");
+            }
         }
 
-        private void handlePut() throws IOException {
+        private void handlePut(BufferedReader input, PrintWriter output) throws IOException {
             StringBuilder body = new StringBuilder();
             String line;
             while ((line = input.readLine()) != null && !line.isEmpty()) {
                 body.append(line);
             }
-            WeatherData newData = gson.fromJson(body.toString(), WeatherData.class);
-            if (newData != null) {
-                weatherDataMap.put(newData.id, newData);
-                lastUpdateTime = System.currentTimeMillis();
-                output.println("HTTP/1.1 200 OK");
-            } else {
+
+            // Print the raw body for debugging
+            System.out.println("Received body: " + body.toString());
+
+            try {
+                // Parse the weather data from the JSON string
+                WeatherData newData = gson.fromJson(body.toString(), WeatherData.class);
+
+                if (newData != null && newData.id != null) {  // Check if weather data is valid
+                    weatherDataMap.put(newData.id, newData);  // Store the weather data
+                    output.println("HTTP/1.1 200 OK");
+                } else {
+                    output.println("HTTP/1.1 400 Bad Request");  // Send bad request if data is invalid
+                }
+            } catch (Exception e) {
+                // Log the error and return an internal server error status
+                e.printStackTrace();
                 output.println("HTTP/1.1 500 Internal Server Error");
             }
         }
+
     }
 }
-

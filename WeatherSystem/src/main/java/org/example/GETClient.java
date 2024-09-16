@@ -15,6 +15,7 @@ public class GETClient {
 
         String serverUrl = args[0];
         try {
+            // Connect to the server
             Socket socket = new Socket(serverUrl.split(":")[0], Integer.parseInt(serverUrl.split(":")[1]));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -22,14 +23,17 @@ public class GETClient {
             // Send GET request
             out.println("GET /weather.json HTTP/1.1");
 
-            // Read response
+            // Read the server's response
             String responseLine;
             StringBuilder response = new StringBuilder();
             while ((responseLine = in.readLine()) != null) {
                 response.append(responseLine);
             }
 
-            // Parse and display response
+            // Print the raw server response for debugging
+            System.out.println("Server response: " + response.toString());
+
+            // Now try parsing the response as JSON
             WeatherData weatherData = gson.fromJson(response.toString(), WeatherData.class);
             displayWeather(weatherData);
 
@@ -39,11 +43,11 @@ public class GETClient {
         }
     }
 
+    // Helper method to display weather data
     private static void displayWeather(WeatherData data) {
         System.out.println("Weather for: " + data.name);
         System.out.println("Temperature: " + data.air_temp + "°C");
         System.out.println("Cloud: " + data.cloud);
         System.out.println("Wind Speed: " + data.wind_spd_kmh + " km/h");
-        // Add more display lines as needed
     }
 }
