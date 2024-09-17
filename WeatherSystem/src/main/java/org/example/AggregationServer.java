@@ -77,29 +77,42 @@ public class AggregationServer {
         private void handlePut(BufferedReader input, PrintWriter output) throws IOException {
             StringBuilder body = new StringBuilder();
             String line;
-            while ((line = input.readLine()) != null && !line.isEmpty()) {
-                body.append(line);
+            boolean isBody = false;
+
+            // 读取 HTTP 请求，并跳过 headers，只处理 JSON 正文部分
+            while ((line = input.readLine()) != null) {
+                if (line.isEmpty()) {
+                    // 空行表示 headers 的结束，接下来是请求正文
+                    isBody = true;
+                    continue;
+                }
+
+                if (isBody) {
+                    // 开始读取 JSON 正文部分
+                    body.append(line);
+                }
             }
 
-            // Print the raw body for debugging
+            // 打印接收到的正文内容（用于调试）
             System.out.println("Received body: " + body.toString());
 
             try {
-                // Parse the weather data from the JSON string
+                // 解析 JSON 正文
                 WeatherData newData = gson.fromJson(body.toString(), WeatherData.class);
 
-                if (newData != null && newData.id != null) {  // Check if weather data is valid
-                    weatherDataMap.put(newData.id, newData);  // Store the weather data
+                if (newData != null && newData.id != null) {  // 确保数据有效
+                    weatherDataMap.put(newData.id, newData);  // 存储天气数据
                     output.println("HTTP/1.1 200 OK");
                 } else {
-                    output.println("HTTP/1.1 400 Bad Request");  // Send bad request if data is invalid
+                    output.println("HTTP/1.1 400 Bad Request");  // 数据无效
                 }
             } catch (Exception e) {
-                // Log the error and return an internal server error status
+                // 处理解析错误
                 e.printStackTrace();
                 output.println("HTTP/1.1 500 Internal Server Error");
             }
         }
+
 
     }
 }
