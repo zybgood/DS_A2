@@ -11,18 +11,27 @@ public class ContentServer {
     private static final Gson gson = new Gson();
     private static LamportClock lamportClock = new LamportClock();
 
+    /**
+     * The main entry point of the program.
+     * Reads weather data from a file, converts it to JSON format, and sends it to the specified server.
+     *
+     * @param args Command line arguments, format: <server:port> <file_path>
+     */
     public static void main(String[] args) {
+        // Check if the number of command line arguments is sufficient
         if (args.length < 2) {
             System.out.println("Usage: java ContentServer <server:port> <file_path>");
             return;
         }
 
+        // Extract server address and file path from command line arguments
         String serverUrl = args[0];
         String filePath = args[1];
 
         try {
             // Read weather data from the file
             WeatherData data = readFromFile(filePath);
+            // Check if the read data is valid
             if (data == null) {
                 System.out.println("Invalid file data");
                 return;
@@ -30,16 +39,18 @@ public class ContentServer {
 
             // Convert WeatherData to JSON
             String jsonData = gson.toJson(data);
+            // Output the JSON data to be sent
             System.out.println("Sending JSON: " + jsonData);
 
-            // Connect to server and send data
+            // Connect to the server
             Socket socket = new Socket(serverUrl.split(":")[0], Integer.parseInt(serverUrl.split(":")[1]));
+            // Create a writer for sending data
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
             // Increment Lamport clock before sending request
             lamportClock.increment();
 
-            // Send PUT request with JSON and Lamport clock in the header
+            // Prepare and send HTTP PUT request
             out.println("PUT /weather.json HTTP/1.1");
             out.println("Content-Type: application/json");
             out.println("Content-Length: " + jsonData.length());
@@ -47,22 +58,38 @@ public class ContentServer {
             out.println();
             out.println(jsonData);
 
+            // Close the connection
             socket.close();
         } catch (Exception e) {
+            // Print exception information in case of error
             e.printStackTrace();
         }
     }
 
-    // Method to read weather data from the file and return WeatherData object
+
+    /**
+     * Reads weather data from a file and returns a WeatherData object.
+     * @param filePath The path to the file containing weather data.
+     * @return A WeatherData object populated with the data from the file.
+     * @throws IOException If there is an issue reading or processing the file.
+     */
     private static WeatherData readFromFile(String filePath) throws IOException {
+        // Create a BufferedReader to read the file
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
+
+        // Create a WeatherData object to store the read data
         WeatherData data = new WeatherData();
 
+        // Read each line of the file
         String line;
         while ((line = reader.readLine()) != null) {
+            // Split each line into parts
             String[] parts = line.split(":");
+
+            // Ensure there are at least two parts after splitting
             if (parts.length < 2) continue;
 
+            // Process the data based on its type
             switch (parts[0].trim()) {
                 case "id":
                     data.id = parts[1].trim();
@@ -117,7 +144,12 @@ public class ContentServer {
                     break;
             }
         }
+
+        // Close the BufferedReader
         reader.close();
+
+        // Return the WeatherData object filled with data
         return data;
     }
+
 }
