@@ -1,8 +1,10 @@
 package org.example;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.io.*;
 import java.net.*;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 public class GETClient {
@@ -32,20 +34,21 @@ public class GETClient {
 
             while ((responseLine = in.readLine()) != null) {
                 if (responseLine.isEmpty()) {
-                    // 空行表示 HTTP 头的结束，接下来是正文
+                    // 空行表示 HTTP 头的结束
                     isBody = true;
                     continue;
                 }
                 if (isBody) {
-                    response.append(responseLine);  // 只读取正文（JSON 数据）
+                    response.append(responseLine);  // 只读取正文,为了转换成JSON 数据
                 }
             }
 
             // 打印服务器响应的正文
             System.out.println("Server response body: " + response.toString());
 
-            // 解析 JSON 正文为 Map<String, WeatherData>
-            Map<String, WeatherData> weatherDataMap = gson.fromJson(response.toString(), Map.class);
+            // 使用 TypeToken 指定 Map<String, WeatherData> 类型，解决WeatherDataMap 的类型转换问题
+            Type weatherDataType = new TypeToken<Map<String, WeatherData>>() {}.getType();
+            Map<String, WeatherData> weatherDataMap = gson.fromJson(response.toString(), weatherDataType);
             displayWeather(weatherDataMap);
 
             socket.close();

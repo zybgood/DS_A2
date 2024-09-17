@@ -7,26 +7,51 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class AggregationServer {
+        // A ConcurrentHashMap to store weather data with string keys and WeatherData values
     private static Map<String, WeatherData> weatherDataMap = new ConcurrentHashMap<>();
+
+    // The port number the server listens on
     private static int port = 4567;
+
+    // Timestamp of the last weather data update
     private static long lastUpdateTime = System.currentTimeMillis();
-    private static final int TIMEOUT = 30000; // 30 seconds timeout
+
+    // Timeout duration set to 30 seconds
+    private static final int TIMEOUT = 30000;
+
+    // Gson instance for JSON parsing and serialization
     private static final Gson gson = new Gson();
 
+
+    /**
+     * The main entry point of the program.
+     * This method starts a server, listens on a specified port, and handles client connections.
+     *
+     * @param args Command-line arguments, which can be used to specify the server port
+     */
     public static void main(String[] args) {
+        // Check command-line arguments and set the server port if provided
         if (args.length > 0) {
             port = Integer.parseInt(args[0]);
         }
 
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        try (
+            // Create a server socket and start listening on the specified port
+            ServerSocket serverSocket = new ServerSocket(port)
+        ) {
+            // Output server startup information
             System.out.println("Server is running on port " + port);
+            // Continuously listen and handle client connections
             while (true) {
+                // Accept a client connection and create a new client handler thread
                 new ClientHandler(serverSocket.accept()).start();
             }
         } catch (IOException e) {
+            // Handle potential IO exceptions
             e.printStackTrace();
         }
     }
+
 
     // Thread to handle client requests (GET/PUT)
     static class ClientHandler extends Thread {
