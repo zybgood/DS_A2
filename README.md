@@ -27,6 +27,7 @@ The project consists of the following files:
 - `GETClient.java`: Fetches and displays the weather data stored on the **AggregationServer**.
 - `LamportClock.java`: Manages the Lamport clock logic for synchronizing logical time.
 - `WeatherData.java`: Represents the weather data model used by the server and client.
+- `AggregationServerTest.java`: Test the feasibility of each method in the project.
 
 ## Setup
 ## Installation and Setup
